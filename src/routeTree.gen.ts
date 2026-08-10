@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedCaixaRouteImport } from './routes/_authenticated/caixa'
+import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedConsumosRouteImport } from './routes/_authenticated/consumos'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedHospedagemRouteImport } from './routes/_authenticated/hospedagem'
@@ -39,6 +40,12 @@ const AuthenticatedCaixaRoute = AuthenticatedCaixaRouteImport.update({
   path: '/caixa',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedConfiguracoesRoute =
+  AuthenticatedConfiguracoesRouteImport.update({
+    id: '/configuracoes',
+    path: '/configuracoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedConsumosRoute = AuthenticatedConsumosRouteImport.update({
   id: '/consumos',
   path: '/consumos',
@@ -74,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/caixa': typeof AuthenticatedCaixaRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/consumos': typeof AuthenticatedConsumosRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/hospedagem': typeof AuthenticatedHospedagemRoute
@@ -85,6 +93,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/caixa': typeof AuthenticatedCaixaRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/consumos': typeof AuthenticatedConsumosRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/hospedagem': typeof AuthenticatedHospedagemRoute
@@ -98,6 +107,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/caixa': typeof AuthenticatedCaixaRoute
+  '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/consumos': typeof AuthenticatedConsumosRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/hospedagem': typeof AuthenticatedHospedagemRoute
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/caixa'
+    | '/configuracoes'
     | '/consumos'
     | '/dashboard'
     | '/hospedagem'
@@ -122,6 +133,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/caixa'
+    | '/configuracoes'
     | '/consumos'
     | '/dashboard'
     | '/hospedagem'
@@ -134,6 +146,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/caixa'
+    | '/_authenticated/configuracoes'
     | '/_authenticated/consumos'
     | '/_authenticated/dashboard'
     | '/_authenticated/hospedagem'
@@ -176,6 +189,13 @@ declare module '@tanstack/react-router' {
       path: '/caixa'
       fullPath: '/caixa'
       preLoaderRoute: typeof AuthenticatedCaixaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/configuracoes': {
+      id: '/_authenticated/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/consumos': {
@@ -225,6 +245,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCaixaRoute: typeof AuthenticatedCaixaRoute
+  AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedConsumosRoute: typeof AuthenticatedConsumosRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedHospedagemRoute: typeof AuthenticatedHospedagemRoute
@@ -235,6 +256,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCaixaRoute: AuthenticatedCaixaRoute,
+  AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedConsumosRoute: AuthenticatedConsumosRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedHospedagemRoute: AuthenticatedHospedagemRoute,
