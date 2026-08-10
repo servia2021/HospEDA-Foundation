@@ -165,7 +165,7 @@ export const logAuditEvent = createServerFn({ method: "POST" })
       action: data.action,
       entity: data.entity ?? null,
       entity_id: data.entityId ?? null,
-      metadata: (data.metadata ?? {}) as Record<string, unknown>,
+      metadata: JSON.parse(JSON.stringify(data.metadata ?? {})),
     });
 
     if (error) throw new Error(error.message);
