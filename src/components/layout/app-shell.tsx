@@ -60,8 +60,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }, [needsOnboarding, onOnboarding, navigate]);
 
-  const primary = items.filter((item) => item.primary).slice(0, 4);
-  const secondary = items.filter((item) => !primary.includes(item));
+  const navItems = needsOnboarding ? [] : items;
+  const primary = navItems.filter((item) => item.primary).slice(0, 4);
+  const secondary = navItems.filter((item) => !primary.includes(item));
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
