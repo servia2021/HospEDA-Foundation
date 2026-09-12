@@ -8,6 +8,13 @@
       "when": 1789234558509,
       "tag": "0000_establishment_timezone_and_audit",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789235176052,
+      "tag": "0001_team_invites_and_audit",
+      "breakpoints": true
     }
   ]
 }
