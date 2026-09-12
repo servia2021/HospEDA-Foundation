@@ -230,9 +230,10 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
       throw new Error(inviteError.message);
     }
 
-    const { error: mailError } = await supabaseAdmin.auth.admin.inviteUserByEmail(data.email, {
-      redirectTo: data.redirectTo,
-    });
+    const { error: mailError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+      data.email,
+      data.redirectTo ? { redirectTo: data.redirectTo } : {},
+    );
 
     return {
       outcome: mailError ? "convite_pendente" : "convite_enviado",
