@@ -11,6 +11,8 @@ export type Establishment = {
   address: string | null;
   city: string | null;
   currency: string;
+  timezone: string;
+  day_start_time: string;
 };
 
 export type SessionContext = {
@@ -42,7 +44,7 @@ export const getSessionContext = createServerFn({ method: "GET" })
     if (profile?.establishment_id) {
       const { data: est, error: estError } = await supabase
         .from("establishments")
-        .select("id, name, phone, address, city, currency")
+        .select("id, name, phone, address, city, currency, timezone, day_start_time")
         .eq("id", profile.establishment_id)
         .maybeSingle();
       if (estError) throw new Error(estError.message);
