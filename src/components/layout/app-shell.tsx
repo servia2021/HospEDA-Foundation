@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from "react";
-import { Link, useRouter, useRouterState } from "@tanstack/react-router";
+import { useEffect, useState, type ReactNode } from "react";
+import { Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { LogOut, MoreHorizontal, Wifi, User2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,15 +43,26 @@ function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const items = useVisibleNav();
-  const { session, role } = useAccess();
+  const { session, role, isLoading } = useAccess();
   const router = useRouter();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [moreOpen, setMoreOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isActive = (to: string) => pathname === to || pathname.startsWith(`${to}/`);
+  const onOnboarding = pathname.startsWith("/onboarding");
+  const needsOnboarding = !isLoading && Boolean(session) && !session?.establishment;
 
-  const primary = items.filter((item) => item.primary).slice(0, 4);
-  const secondary = items.filter((item) => !primary.includes(item));
+  // Sem estabelecimento não existe operação possível: encaminhar para o registo inicial.
+  useEffect(() => {
+    if (needsOnboarding && !onOnboarding) {
+      void navigate({ to: "/onboarding", replace: true });
+    }
+  }, [needsOnboarding, onOnboarding, navigate]);
+
+  const navItems = needsOnboarding ? [] : items;
+  const primary = navItems.filter((item) => item.primary).slice(0, 4);
+  const secondary = navItems.filter((item) => !primary.includes(item));
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
@@ -68,7 +79,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Brand tone="dark" showTagline />
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto" aria-label="Navegação principal">
-          {items.map((item) => (
+          {navItems.map((item) => (
             <SidebarLink key={item.to} item={item} active={isActive(item.to)} />
           ))}
         </nav>

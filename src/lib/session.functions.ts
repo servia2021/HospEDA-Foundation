@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { isAppRole, type AppRole } from "@/lib/roles";
 import { DEFAULT_CURRENCY } from "@/lib/currency";
+import { DEFAULT_TIMEZONE, DEFAULT_DAY_START } from "@/lib/operations";
 
 export type Establishment = {
   id: string;
@@ -11,6 +12,8 @@ export type Establishment = {
   address: string | null;
   city: string | null;
   currency: string;
+  timezone: string;
+  day_start_time: string;
 };
 
 export type SessionContext = {
@@ -42,7 +45,7 @@ export const getSessionContext = createServerFn({ method: "GET" })
     if (profile?.establishment_id) {
       const { data: est, error: estError } = await supabase
         .from("establishments")
-        .select("id, name, phone, address, city, currency")
+        .select("id, name, phone, address, city, currency, timezone, day_start_time")
         .eq("id", profile.establishment_id)
         .maybeSingle();
       if (estError) throw new Error(estError.message);
@@ -135,6 +138,57 @@ export const createEstablishment = createServerFn({ method: "POST" })
     });
 
     return { id: created.id, alreadyExisted: false as const };
+  });
+
+const updateEstablishmentSchema = z.object({
+  name: z.string().trim().min(2, "Indique o nome do estabelecimento").max(120),
+  phone: z.string().trim().min(6, "Indique um telefone válido").max(40),
+  city: z.string().trim().min(2, "Indique a cidade").max(80),
+  address: z.string().trim().max(200).optional().default(""),
+  timezone: z.string().trim().min(3).max(60).default(DEFAULT_TIMEZONE),
+  dayStartTime: z
+    .string()
+    .trim()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Hora inválida (HH:MM)")
+    .default(DEFAULT_DAY_START),
+});
+
+/**
+ * Atualiza os dados básicos do estabelecimento ativo.
+ * O RLS só permite a Proprietário/Administrador; a auditoria é gravada por trigger.
+ */
+export const updateEstablishment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => updateEstablishmentSchema.parse(data))
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("establishment_id")
+      .eq("id", userId)
+      .maybeSingle();
+    if (profileError) throw new Error(profileError.message);
+    if (!profile?.establishment_id) throw new Error("Nenhum estabelecimento associado.");
+
+    const { data: updated, error } = await supabase
+      .from("establishments")
+      .update({
+        name: data.name,
+        phone: data.phone,
+        city: data.city,
+        address: data.address || null,
+        timezone: data.timezone,
+        day_start_time: data.dayStartTime,
+      })
+      .eq("id", profile.establishment_id)
+      .select("id, name, phone, address, city, currency, timezone, day_start_time")
+      .maybeSingle();
+
+    if (error) throw new Error(error.message);
+    if (!updated) throw new Error("Não tem permissão para alterar estes dados.");
+
+    return updated as Establishment;
   });
 
 const auditSchema = z.object({
