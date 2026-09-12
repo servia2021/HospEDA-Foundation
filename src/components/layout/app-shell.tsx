@@ -79,7 +79,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Brand tone="dark" showTagline />
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto" aria-label="Navegação principal">
-          {items.map((item) => (
+          {navItems.map((item) => (
             <SidebarLink key={item.to} item={item} active={isActive(item.to)} />
           ))}
         </nav>
