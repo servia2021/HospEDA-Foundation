@@ -11,9 +11,9 @@
 ## Passo 0 — Verificar base (concluído)
 - [x] Migrações versionadas = estado real da base
 
-## Passo 2 — Equipa (em curso)
+## Passo 2 — Equipa (concluído, a validar pelo cliente)
 - [x] Ecrã Equipa nas Configurações + proteção do Proprietário na base
-- [ ] Validar fluxo, recepcionista e isolamento
+- [x] Validar fluxo, recepcionista e isolamento
 
 ## Passos 3+ — Operação real
 - [ ] Base de dados: tipos de quarto, quartos, hóspedes, estadias, pagamentos

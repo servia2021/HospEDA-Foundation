@@ -73,7 +73,9 @@ export function TeamSection() {
       toast.success(
         result.outcome === "membro_adicionado"
           ? `${result.email} foi adicionado à equipa.`
-          : `Convite registado para ${result.email}. A pessoa entra ao criar conta com este email.`,
+          : result.outcome === "convite_enviado"
+            ? `Convite enviado por email para ${result.email}.`
+            : `Convite registado para ${result.email}. A pessoa entra ao criar conta com este email.`,
       );
     },
     onError: (e) => toast.error(errorText(e)),

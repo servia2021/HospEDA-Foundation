@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Owner-role protection and cross-tenant role checks live in the `guard_user_role_change` trigger on `user_roles`; why: RLS alone let managers edit/remove the Proprietário.
