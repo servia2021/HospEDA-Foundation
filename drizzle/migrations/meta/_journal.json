@@ -29,6 +29,13 @@
       "when": 1791102451042,
       "tag": "0003_fix_invite_acceptance_conflict",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791151066048,
+      "tag": "0004_operations_core",
+      "breakpoints": true
     }
   ]
 }
