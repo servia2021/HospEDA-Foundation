@@ -209,7 +209,7 @@ export function TeamSection() {
                 ) : (
                   <div className="flex items-center gap-2">
                     <Select
-                      value={member.role ?? undefined}
+                      value={member.role ?? ""}
                       onValueChange={(v) =>
                         setPending({ kind: "role", member, role: v as AssignableRole })
                       }
