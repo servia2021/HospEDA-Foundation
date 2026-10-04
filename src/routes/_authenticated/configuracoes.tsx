@@ -20,7 +20,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAccess, SESSION_QUERY_KEY } from "@/hooks/useSessionContext";
-import { ROLE_LABELS, APP_ROLES } from "@/lib/roles";
+import { ROLE_LABELS } from "@/lib/roles";
+import { TeamSection } from "@/components/team/team-section";
 import { updateEstablishment } from "@/lib/session.functions";
 import {
   DEFAULT_DAY_START,
@@ -221,34 +222,26 @@ function SettingsPage() {
         )}
       </section>
 
-      <section className="surface-card p-5 sm:p-6">
-        <div className="flex items-center gap-3">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary">
-            <Users className="h-5 w-5" aria-hidden="true" />
-          </span>
-          <h2 className="min-w-0 truncate font-display text-base font-bold text-foreground">
-            Papéis disponíveis
-          </h2>
-        </div>
-        <Separator className="my-4" />
-        <ul className="grid gap-2.5">
-          {APP_ROLES.map((appRole) => (
-            <li
-              key={appRole}
-              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl bg-surface px-3.5 py-3"
-            >
-              <span className="min-w-0 truncate text-sm font-semibold text-foreground">
-                {ROLE_LABELS[appRole]}
-              </span>
-              {role === appRole ? <Badge>O seu papel</Badge> : null}
-            </li>
-          ))}
-        </ul>
-        <p className="mt-3 text-xs text-muted-foreground">
-          O convite e a gestão da equipa entram no passo seguinte. As permissões por papel já estão
-          ativas na navegação.
-        </p>
-      </section>
+      {can("equipa.gerir") ? (
+        <TeamSection />
+      ) : (
+        <section className="surface-card p-5 sm:p-6">
+          <div className="flex items-center gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary">
+              <Users className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <h2 className="min-w-0 truncate font-display text-base font-bold text-foreground">
+              O seu acesso
+            </h2>
+          </div>
+          <Separator className="my-4" />
+          <Row label="Papel" value={role ? ROLE_LABELS[role] : "—"} />
+          <Row label="Estabelecimento" value={establishment?.name ?? "—"} />
+          <p className="mt-3 text-xs text-muted-foreground">
+            A equipa é gerida pelo Proprietário ou Administrador.
+          </p>
+        </section>
+      )}
 
       <section className="surface-card p-5 sm:p-6">
         <div className="flex items-center gap-3">

@@ -15,6 +15,20 @@
       "when": 1789235176052,
       "tag": "0001_team_invites_and_audit",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791102346331,
+      "tag": "0002_guard_owner_role",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791102451042,
+      "tag": "0003_fix_invite_acceptance_conflict",
+      "breakpoints": true
     }
   ]
 }

@@ -8,8 +8,12 @@
 - [x] Auditoria automática nas alterações do estabelecimento
 - [x] Teste de fluxo + typecheck
 
-## Passo 2 — Equipa (a seguir)
-- [ ] Acrescentar utilizador com papel; validar visibilidade da Recepcionista
+## Passo 0 — Verificar base (concluído)
+- [x] Migrações versionadas = estado real da base
+
+## Passo 2 — Equipa (concluído, a validar pelo cliente)
+- [x] Ecrã Equipa nas Configurações + proteção do Proprietário na base
+- [x] Validar fluxo, recepcionista e isolamento
 
 ## Passos 3+ — Operação real
 - [ ] Base de dados: tipos de quarto, quartos, hóspedes, estadias, pagamentos
