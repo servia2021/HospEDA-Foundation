@@ -253,6 +253,8 @@ export const updateTeamMemberRole = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { establishmentId } = await requireManager({ supabase, userId });
+    if (data.userId === userId) throw new Error("Não pode alterar o seu próprio papel.");
+
 
     const { data: rows, error } = await supabase
       .from("user_roles")
