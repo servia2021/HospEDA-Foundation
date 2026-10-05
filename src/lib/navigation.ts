@@ -37,7 +37,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     shortLabel: "Quartos",
     icon: BedDouble,
     permission: "hospedagem.ver",
-    upcoming: true,
+    upcoming: false,
     primary: true,
   },
   {

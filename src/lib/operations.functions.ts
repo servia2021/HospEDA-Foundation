@@ -204,3 +204,136 @@ export const cancelStay = createServerFn({ method: "POST" })
     unwrap(await context.supabase.rpc("op_cancel_stay", { _stay_id: data.stayId, _reason: data.reason }));
     return { ok: true as const };
   });
+
+/** Estender hospedagem por horas (não cria nova entrada). */
+export const extendStay = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        stayId: uuid,
+        minutes: z.number().int().min(15).max(1440),
+        expectedCheckoutAt: z.string().datetime({ offset: true }),
+        amount: z.number().int().min(0).max(100_000_000),
+        payNow: z.boolean(),
+        method: method.optional().nullable(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const end = unwrap(
+      await context.supabase.rpc("op_extend_stay", {
+        _stay_id: data.stayId,
+        _minutes: data.minutes,
+        _expected_checkout_at: data.expectedCheckoutAt,
+        _amount: data.amount,
+        _pay_now: data.payNow,
+        _method: data.method ?? null,
+      } as never),
+    );
+    return { expectedCheckoutAt: end as unknown as string };
+  });
+
+export type BoardRoom = {
+  id: string;
+  name: string;
+  status: "livre" | "ocupado" | "limpeza" | "manutencao";
+  roomTypeId: string;
+  roomTypeName: string;
+  nightlyPriceKz: number;
+  hourlyPriceKz: number | null;
+  hourlyBlockMinutes: number;
+  stay: null | {
+    id: string;
+    mode: "noite" | "horas";
+    guestName: string;
+    guestPhone: string | null;
+    startedAt: string;
+    expectedCheckoutAt: string;
+    contractedMinutes: number | null;
+    agreedAmount: number;
+    expectedAmount: number;
+    paidKz: number;
+  };
+};
+
+export type OperationsBoard = {
+  serverNow: string;
+  timezone: string;
+  rooms: BoardRoom[];
+  roomTypes: { id: string; name: string; nightlyPriceKz: number; hourlyPriceKz: number | null; hourlyBlockMinutes: number }[];
+  receivedTodayKz: number;
+};
+
+/** Estado operacional completo do estabelecimento (todos os papéis; RLS isola). */
+export const getOperationsBoard = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<OperationsBoard> => {
+    const sb = context.supabase;
+    const [typesR, roomsR, staysR, dayR, estR] = await Promise.all([
+      sb.from("room_types").select("id, name, nightly_price_kz, hourly_price_kz, hourly_block_minutes, active").order("name"),
+      sb.from("rooms").select("id, name, status, room_type_id, active").eq("active", true),
+      sb.from("stays").select("id, room_id, guest_id, mode, started_at, expected_checkout_at, contracted_minutes, agreed_amount, expected_amount").eq("status", "em_curso"),
+      sb.rpc("op_current_day_start"),
+      sb.from("establishments").select("timezone").limit(1).maybeSingle(),
+    ]);
+    for (const r of [typesR, roomsR, staysR, dayR]) if (r.error) throw new Error(r.error.message);
+
+    const stays = staysR.data ?? [];
+    const stayIds = stays.map((s) => s.id);
+    const guestIds = stays.map((s) => s.guest_id);
+    const [guestsR, payR, todayR] = await Promise.all([
+      guestIds.length ? sb.from("guests").select("id, full_name, phone").in("id", guestIds) : Promise.resolve({ data: [], error: null }),
+      stayIds.length ? sb.from("payments").select("stay_id, amount_kz").eq("status", "ativo").in("stay_id", stayIds) : Promise.resolve({ data: [], error: null }),
+      sb.from("payments").select("amount_kz").eq("status", "ativo").gte("paid_at", (dayR.data as unknown as string) ?? new Date().toISOString()),
+    ]);
+    for (const r of [guestsR, payR, todayR]) if (r.error) throw new Error(r.error.message);
+
+    const guests = new Map((guestsR.data ?? []).map((g) => [g.id, g]));
+    const paid = new Map<string, number>();
+    for (const p of payR.data ?? []) paid.set(p.stay_id, (paid.get(p.stay_id) ?? 0) + p.amount_kz);
+    const types = new Map((typesR.data ?? []).map((t) => [t.id, t]));
+    const stayByRoom = new Map(stays.map((s) => [s.room_id, s]));
+
+    const rooms: BoardRoom[] = (roomsR.data ?? [])
+      .map((r) => {
+        const t = types.get(r.room_type_id);
+        const s = stayByRoom.get(r.id);
+        const g = s ? guests.get(s.guest_id) : undefined;
+        return {
+          id: r.id,
+          name: r.name,
+          status: r.status,
+          roomTypeId: r.room_type_id,
+          roomTypeName: t?.name ?? "",
+          nightlyPriceKz: t?.nightly_price_kz ?? 0,
+          hourlyPriceKz: t?.hourly_price_kz ?? null,
+          hourlyBlockMinutes: t?.hourly_block_minutes ?? 180,
+          stay: s
+            ? {
+                id: s.id,
+                mode: s.mode,
+                guestName: g?.full_name ?? "—",
+                guestPhone: g?.phone ?? null,
+                startedAt: s.started_at,
+                expectedCheckoutAt: s.expected_checkout_at,
+                contractedMinutes: s.contracted_minutes,
+                agreedAmount: s.agreed_amount,
+                expectedAmount: s.expected_amount,
+                paidKz: paid.get(s.id) ?? 0,
+              }
+            : null,
+        };
+      })
+      .sort((a, b) => a.name.localeCompare(b.name, "pt", { numeric: true }));
+
+    return {
+      serverNow: new Date().toISOString(),
+      timezone: estR.data?.timezone ?? "Africa/Luanda",
+      rooms,
+      roomTypes: (typesR.data ?? [])
+        .filter((t) => t.active)
+        .map((t) => ({ id: t.id, name: t.name, nightlyPriceKz: t.nightly_price_kz, hourlyPriceKz: t.hourly_price_kz, hourlyBlockMinutes: t.hourly_block_minutes })),
+      receivedTodayKz: (todayR.data ?? []).reduce((a, p) => a + p.amount_kz, 0),
+    };
+  });

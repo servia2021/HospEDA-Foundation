@@ -388,6 +388,7 @@ export type Database = {
           cancel_reason: string | null
           closed_by: string | null
           closed_with_debt: boolean
+          contracted_minutes: number | null
           created_at: string
           created_by: string
           establishment_id: string
@@ -396,6 +397,7 @@ export type Database = {
           guest_id: string
           id: string
           mode: Database["public"]["Enums"]["stay_mode"]
+          overtime_minutes: number | null
           room_id: string
           started_at: string
           status: Database["public"]["Enums"]["stay_status"]
@@ -408,6 +410,7 @@ export type Database = {
           cancel_reason?: string | null
           closed_by?: string | null
           closed_with_debt?: boolean
+          contracted_minutes?: number | null
           created_at?: string
           created_by: string
           establishment_id: string
@@ -416,6 +419,7 @@ export type Database = {
           guest_id: string
           id?: string
           mode: Database["public"]["Enums"]["stay_mode"]
+          overtime_minutes?: number | null
           room_id: string
           started_at?: string
           status?: Database["public"]["Enums"]["stay_status"]
@@ -428,6 +432,7 @@ export type Database = {
           cancel_reason?: string | null
           closed_by?: string | null
           closed_with_debt?: boolean
+          contracted_minutes?: number | null
           created_at?: string
           created_by?: string
           establishment_id?: string
@@ -436,6 +441,7 @@ export type Database = {
           guest_id?: string
           id?: string
           mode?: Database["public"]["Enums"]["stay_mode"]
+          overtime_minutes?: number | null
           room_id?: string
           started_at?: string
           status?: Database["public"]["Enums"]["stay_status"]
@@ -543,6 +549,7 @@ export type Database = {
         Args: { _document_ref: string; _full_name: string; _phone: string }
         Returns: string
       }
+      op_current_day_start: { Args: never; Returns: string }
       op_extend_hourly_stay: {
         Args: {
           _payment_amount: number
@@ -551,6 +558,17 @@ export type Database = {
           _units: number
         }
         Returns: undefined
+      }
+      op_extend_stay: {
+        Args: {
+          _amount: number
+          _expected_checkout_at: string
+          _method: Database["public"]["Enums"]["payment_method"]
+          _minutes: number
+          _pay_now: boolean
+          _stay_id: string
+        }
+        Returns: string
       }
       op_finish_stay: {
         Args: { _allow_debt: boolean; _stay_id: string }
