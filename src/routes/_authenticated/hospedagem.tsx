@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { BedDouble } from "lucide-react";
-import { ModulePlaceholder } from "@/components/module-placeholder";
+import { PageHeader } from "@/components/page-header";
+import { OperationsBoardView } from "@/components/hospedagem/board";
 
 export const Route = createFileRoute("/_authenticated/hospedagem")({
   head: () => ({
@@ -8,24 +8,25 @@ export const Route = createFileRoute("/_authenticated/hospedagem")({
       { title: "Hospedagem — HOSPEDA" },
       {
         name: "description",
-        content: "Quartos, reservas e estadias da sua hospedaria — módulo em preparação.",
+        content: "Quartos, hospedagens em curso, cronómetros e pagamentos em tempo real.",
       },
       { property: "og:title", content: "Hospedagem — HOSPEDA" },
-      { property: "og:description", content: "Gestão de quartos, reservas e estadias." },
+      { property: "og:description", content: "Controlo operacional da hospedaria à distância." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: () => (
-    <ModulePlaceholder
-      icon={BedDouble}
-      phase="Fase 2"
-      title="Hospedagem"
-      description="Aqui vai viver o coração da operação: quartos, reservas e estadias."
-      planned={[
-        "Registo de quartos e tipologias com preço em Kz",
-        "Reservas e mapa de disponibilidade",
-        "Check-in e check-out com registo do hóspede",
-        "Estado do quarto em tempo real",
-      ]}
-    />
-  ),
+  component: HospedagemPage,
 });
+
+function HospedagemPage() {
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Hospedagem"
+        description="Estado real dos quartos, tempo restante e dinheiro recebido — atualizado ao vivo."
+      />
+      <OperationsBoardView />
+    </div>
+  );
+}
