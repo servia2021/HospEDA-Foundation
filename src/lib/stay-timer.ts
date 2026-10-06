@@ -17,6 +17,13 @@ export function timerLevel(remainingMs: number): TimerLevel {
   return "normal";
 }
 
+/** "00:20:09" — tempo excedido. */
+export function formatHms(ms: number): string {
+  const total = Math.max(0, Math.floor(Math.abs(ms) / 1000));
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(Math.floor(total / 3600))}:${pad(Math.floor((total % 3600) / 60))}:${pad(total % 60)}`;
+}
+
 /** "1h 05m 09s" / "12m 03s". */
 export function formatDuration(ms: number): string {
   const total = Math.max(0, Math.floor(Math.abs(ms) / 1000));

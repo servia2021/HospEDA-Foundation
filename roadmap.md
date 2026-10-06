@@ -16,5 +16,9 @@
 - [x] Validar fluxo, recepcionista e isolamento
 
 ## Passos 3+ — Operação real
-- [ ] Base de dados: tipos de quarto, quartos, hóspedes, estadias, pagamentos
+- [x] Base de dados: tipos de quarto, quartos, hóspedes, estadias, pagamentos
 - [ ] Quartos, Entrada, Pagamentos, Saída/Limpeza, Dashboard vivo, ensaio completo
+
+## Controlo Operacional Remoto (concluído e validado)
+- [x] Cronómetro persistido, extensão, expiração, saída por horas liberta o quarto, auditoria, tempo real
+- [ ] Dashboard vivo, ensaio completo
