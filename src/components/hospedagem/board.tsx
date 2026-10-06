@@ -38,7 +38,7 @@ import {
   type BoardRoom,
   type OperationsBoard,
 } from "@/lib/operations.functions";
-import { formatClock, formatDuration, timerLevel, TIMER_LABELS, useServerNow, type TimerLevel } from "@/lib/stay-timer";
+import { formatClock, formatDuration, formatHms, timerLevel, TIMER_LABELS, useServerNow, type TimerLevel } from "@/lib/stay-timer";
 
 export const BOARD_QUERY_KEY = ["operations-board"] as const;
 type Method = "dinheiro" | "tpa_transferencia" | "outro";
@@ -233,7 +233,7 @@ function StayCard({
       <div className={cn("rounded-xl px-3.5 py-3", LEVEL_CLASS[level])} data-testid="timer">
         <p className="text-xs font-bold tracking-wide uppercase">{TIMER_LABELS[level]}</p>
         <p className="text-numeric font-display text-2xl font-extrabold">
-          {level === "expirado" ? `+${formatDuration(remaining)}` : formatDuration(remaining)}
+          {level === "expirado" ? `Tempo excedido +${formatHms(remaining)}` : formatDuration(remaining)}
         </p>
         <p className="text-xs">
           {level === "expirado" ? "Excedido · expirou às " : "Termina às "}
@@ -418,7 +418,9 @@ function ActionDialog({
         return `Pagamento de ${formatMoney(amount)} registado.`;
       }
       await fnFinish({ data: { stayId: stay!.id, allowDebt: owed > 0 && isManager } });
-      return `Saída registada. Quarto ${action.room.name} vai para limpeza.`;
+      return stay!.mode === "horas"
+        ? `Saída registada. Quarto ${action.room.name} está livre.`
+        : `Saída registada. Quarto ${action.room.name} vai para limpeza.`;
     },
     onSuccess: async (msg) => {
       await qc.invalidateQueries({ queryKey: BOARD_QUERY_KEY });
@@ -471,7 +473,9 @@ function ActionDialog({
             </DialogDescription>
           ) : null}
           {action?.kind === "checkout" && owed === 0 ? (
-            <DialogDescription>Tudo pago. O quarto passa para limpeza.</DialogDescription>
+            <DialogDescription>
+              {stay?.mode === "horas" ? "Tudo pago. O quarto fica livre de imediato." : "Tudo pago. O quarto passa para limpeza."}
+            </DialogDescription>
           ) : null}
           {action?.kind === "extend" && stay ? (
             <DialogDescription>
