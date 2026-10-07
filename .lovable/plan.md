@@ -1,118 +1,65 @@
-# HOSPEDA — Auditoria e plano até ao primeiro cliente
+# HOSPEDA — Ensaio final do MVP piloto (hospedagem)
 
-## 1. O que está realmente funcional (verificado)
+Objetivo: provar, com dados de teste isolados, que quartos, estadias, pagamentos, cronómetro, auditoria e permissões estão aptos para os primeiros pilotos. Sem novas funcionalidades. Correções só se um teste falhar por comportamento realmente errado, e só no âmbito da hospedagem.
 
-- Registo, login, sessão e páginas privadas protegidas.
-- Isolamento entre estabelecimentos (validado com dois utilizadores reais, 14/14).
-- Registo inicial do estabelecimento; quem não tem estabelecimento é levado para lá.
-- Configurações: Proprietário/Administrador editam nome, telefone, cidade, endereço, fuso horário e hora de início do dia; Recepcionista só vê.
-- Histórico automático das alterações ao estabelecimento.
-- Navegação: menu lateral no computador, barra inferior no telemóvel.
-- Equipa (parte do servidor apenas): tabela de convites, aceitação automática ao criar conta, histórico de convites e papéis, operações de listar/convidar/mudar papel/remover/cancelar.
+## Estado atual (já verificado no código)
 
-## 2. O que falta para ser vendável/demonstrável
+- A entrada usa a hora real do servidor. Por horas exige o pagamento total na mesma operação; o fim é a entrada mais a duração do período.
+- A extensão soma minutos ao fim atual e recusa pedidos feitos sobre um fim desatualizado. A saída bloqueia a linha da estadia: por horas o quarto fica Livre, por noite vai para Limpeza.
+- Não há nenhuma automação que liberte o quarto ou cobre quando o tempo expira.
+- Fim por noite: a data do dia operacional (dia anterior se a hora local for antes do "início do dia") + noites, à hora de checkout (12:00).
 
-- **Equipa sem ecrã**: as operações existem mas nenhum ecrã as usa. A Recepcionista não pode ser adicionada pela interface.
-- **Hospedagem, Dashboard e Caixa** ainda são páginas de espera ou mostram zeros fixos.
-- **Envio de emails de convite** não está configurado; hoje o convite fica pendente e a pessoa entra quando cria conta com esse email.
-- **Risco a confirmar primeiro**: o repositório só tem 2 ficheiros de migração, mas a base de dados já tem convites, fuso horário e gatilhos. Antes de criar tabelas novas, confirmar que todas as alterações da base de dados estão guardadas no GitHub (senão um novo ambiente nasceria incompleto).
-- Registo com confirmação automática de email está ligado; aceitável para demonstração, decidir antes de produção.
+## Dados de teste isolados
 
-## 3. Módulos mínimos agora
+- Um estabelecimento novo "ENSAIO PILOTO (TESTE)" com 3 contas `ensaio.*@teste-hospeda.ao` (Proprietário, Administrador, Recepcionista) e uma conta de fora para isolamento.
+- Tipo "Motel TESTE" (5.000 Kz por 120 min; 15.000 Kz por noite), quartos 07 e 08, hóspede "João Manuel (TESTE)".
+- O estabelecimento real "Emas" e as contas reais não são tocados nem lidos para escrita.
 
-1. **Equipa** (ecrã) — lista, convidar, mudar papel, remover.
-2. **Quartos** — tipos com preços e grelha de quartos por estado.
-3. **Entrada** — escolher quarto livre, hóspede rápido, modo noite/horas, valor.
-4. **Pagamento** — receber valor e meio de pagamento; pago/em falta.
-5. **Saída e limpeza** — fechar estadia, quarto vai a limpeza, "Pronto" liberta.
-6. **Dashboard vivo** — Agora, Dinheiro de hoje, Atenção.
+## Testes (PASS/FAIL com evidência)
 
-Nada mais.
+1. Entrada Q07 por horas, 120 min, 5.000 Kz, pela Recepcionista.
+2. Na base de dados: `started_at` = momento da confirmação, fim = +120 min, pagamento 5.000 Kz ativo, estadia ligada ao Q07, Q07 Ocupado. Para mostrar 22:14 / 00:14, as horas desta estadia de teste são deslocadas para as 22:14 de Luanda, mantendo a duração.
+3. Administrador e Proprietário veem a mesma estadia; o cronómetro igual em duas sessões de browser e após refresh.
+4. Extensão +1h de 00:14 para 01:14; auditoria com autor, papel, quarto, fim anterior e novo, minutos e hora; `started_at` intacto.
+5. Expiração (fim deslocado para o passado): ecrã mostra TEMPO EXPIRADO e "Tempo excedido +HH:MM:SS"; Q07 continua Ocupado; nenhum pagamento novo criado.
+6. Saída: `actual_checkout_at`, minutos excedidos, Q07 Livre logo a seguir; registo `estadia.saida` lido diretamente na base de dados.
+7. Segunda saída e extensão após encerramento recusadas; estado e pagamentos iguais antes/depois.
+8. Duas saídas em simultâneo e duas extensões em simultâneo: só uma de cada aplica, a outra recebe mensagem clara.
+9. Permissões, testadas diretamente nas operações do servidor:
+   - Recepcionista: entra, recebe, sai se tudo pago, marca Pronto; não anula, não fecha com dívida, não muda preço, não põe manutenção, não estende sem pagar.
+   - Administrador e Proprietário: anulam com motivo, fecham com dívida, estendem, gerem quartos.
+   - Conta de fora e visitante sem sessão: não veem nem alteram nada.
+10. Pagamentos: anulado continua no histórico com autor e motivo; apagar é bloqueado; a soma da estadia bate certo.
+11. Tempo real: ação da Recepcionista chega ao Administrador e ao Proprietário, e vice-versa, no ecrã sem recarregar.
+12. Verificação de código, compilação e abertura de /hospedagem em formato telemóvel sem erros na consola.
+13. Entrada depois da meia-noite (ver abaixo).
 
-## 4. Regras de negócio (fixar já para evitar refazer)
+## Teste 13 — entrada depois da meia-noite
 
-**Estados do quarto** — guardados: Livre, Ocupado, Limpeza, Manutenção. "A sair" **não é guardado**: é calculado (ocupado com saída prevista hoje ou já ultrapassada = "A sair" / "Atrasado"). Assim nunca fica desatualizado.
+Casos medidos na base de dados (estadia por noite, 1 noite, checkout 12:00):
 
 ```text
-Livre --entrada--> Ocupado --saída--> Limpeza --pronto--> Livre
-Livre <--> Manutenção (manual, só gestores; bloqueia entradas)
+Início do dia | Entrada | Fim calculado hoje
+00:00         | 01:21   | amanhã 12:00 (~34h)
+00:00         | 23:30   | amanhã 12:00
+06:00         | 01:21   | hoje 12:00  (conta como a noite anterior)
+06:00         | 08:00   | amanhã 12:00
 ```
 
-O estado muda só pelas ações; a base de dados garante uma única estadia em curso por quarto.
+Avaliação: o sistema faz o que a configuração manda. Uma hospedaria que considera as chegadas de madrugada como "a noite anterior" deve usar um início do dia como 06:00, que já existe nas Configurações. Por isso, à partida não é erro de código e não se altera nada. Só será corrigido se algum caso não bater com a tabela acima. Recomendação para os pilotos, sem mudar código: combinar com cada hospedaria o início do dia (por exemplo 06:00).
 
-**Modos de estadia**
-- **Por noite**: saída prevista = data de saída à hora de checkout do estabelecimento (padrão 12:00). Total = noites x preço acordado. Pagamento parcial permitido.
-- **Por horas** (curta duração): escolhe-se o nº de períodos (ex.: 3h). Saída prevista = entrada + duração. **Regra explícita: pagamento total obrigatório na entrada** — a entrada não é gravada sem o pagamento completo, numa só operação. Prolongar = novo pagamento antes de estender a hora.
+## Limpeza
 
-**Preço**: o tipo de quarto sugere o valor; a estadia guarda o valor acordado. Mudar a tabela nunca altera estadias antigas. Só gestores alteram o valor sugerido.
+- No fim, apresento a lista exata dos IDs criados (estabelecimento, contas, quartos, tipos, hóspedes, estadias, pagamentos, convites, papéis, histórico) e confirmo que não incluem "Emas" nem contas reais.
+- A remoção só é feita depois dessa lista estar apresentada. Os pagamentos só se apagam contornando a proteção nessa única operação, que continua ativa a seguir.
 
-**Pagamentos**: vários por estadia; meios: Dinheiro, Multicaixa/TPA, Transferência, Outro. Nunca se apagam: anula-se com motivo e autor (só gestores). Valores em Kz inteiros.
+## Entrega
 
-**Saída**
-- Se houver valor em falta: decisão explícita — "Receber agora" ou "Fechar com dívida" (só gestores podem fechar com dívida; recepcionista tem de receber).
-- Saída antecipada em estadia por noite: recalcula noites, mostra a diferença; o reembolso é registado como nota, sem fluxo próprio.
-- Estadia por horas não recalcula para baixo.
-
-**Limpeza**: após saída, quarto em Limpeza; qualquer papel marca "Pronto". Alerta se em limpeza há mais de 2 horas.
-
-**Cancelamento**: só por gestores e só para entradas registadas por engano (motivo obrigatório); fica no histórico. Nada é apagado.
-
-**Dia de operação**: "hoje" usa o fuso e a hora de início do dia do estabelecimento.
-
-## 5. Permissões exatas
-
-| Ação | Proprietário | Administrador | Recepcionista |
-|---|---|---|---|
-| Ver Dashboard, quartos, estadias atuais | sim | sim | sim |
-| Registar entrada, receber pagamento, registar saída | sim | sim | sim |
-| Marcar quarto "Pronto" após limpeza | sim | sim | sim |
-| Criar/editar hóspedes | sim | sim | sim |
-| Alterar preço sugerido numa entrada | sim | sim | não |
-| Pôr/tirar quarto de manutenção | sim | sim | não |
-| Criar/editar quartos, tipos e preços | sim | sim | não |
-| Fechar saída com dívida | sim | sim | não |
-| Anular pagamento / cancelar estadia | sim | sim | não |
-| Ver dinheiro do dia (todos) | sim | sim | só o que ela recebeu |
-| Editar estabelecimento | sim | sim | não |
-| Gerir equipa (Admin/Recepcionista) | sim | sim | não |
-| Alterar/remover Proprietário | ninguém por este ecrã | não | não |
-| Ver histórico/auditoria | sim | sim | não |
-
-Todas garantidas na base de dados, não só no ecrã.
-
-## 6. Ordem de implementação (cada passo validado)
-
-0. **Verificar a base**: confirmar que todas as alterações da base de dados estão no repositório. *Validar: lista de migrações corresponde ao estado real.*
-1. **Ecrã Equipa** nas Configurações. *Validar: gestor convida recepcionista; ela cria conta, entra no estabelecimento certo e não vê Equipa; mudar papel pede confirmação; outro estabelecimento não vê nada.*
-2. **Base da operação**: tipos de quarto, quartos, hóspedes, estadias, pagamentos, com isolamento, permissões e histórico automático; regra de uma estadia por quarto; hora de checkout no estabelecimento. *Validar: testes com dois estabelecimentos e com recepcionista a tentar ações proibidas.*
-3. **Quartos**: criar tipos e quartos (criação rápida de vários de uma vez), grelha por estado no telemóvel. *Validar: 21 quartos criados em poucos minutos.*
-4. **Entrada** (noite e horas), com pagamento obrigatório no modo horas. *Validar: entrada por horas impossível sem pagamento total; quarto passa a Ocupado; 2.ª entrada no mesmo quarto bloqueada.*
-5. **Pagamentos** na ficha da estadia. *Validar: somas, parciais, anulação só por gestor.*
-6. **Saída e limpeza**. *Validar: saída com dívida, saída antecipada, limpeza -> Livre.*
-7. **Dashboard vivo** (3 blocos, dados reais, sem gráficos). *Validar contra os dados dos passos anteriores.*
-8. **Ensaio de um dia completo** no telemóvel + revisão de segurança + limpeza dos dados de teste.
-
-## 7. Fica deliberadamente para depois
-
-Reservas e calendário; consumos/bar e stock; caixa por turno com abertura/fecho; relatórios e exportações; faturação fiscal; envio real de emails/SMS; funcionamento sem internet; múltiplos estabelecimentos por utilizador; fotos de documentos; integrações; câmaras; módulos Operação e Relatórios (continuam como "em breve" ou escondidos).
-
-## 8. Critérios de "pronto para primeiro cliente"
-
-- Proprietário regista estabelecimento, cria 21 quartos e convida a recepcionista sem ajuda técnica.
-- Recepcionista faz uma entrada por noite em até 3 ecrãs e uma por horas (com pagamento) em menos de 1 minuto no telemóvel.
-- É impossível: duas estadias no mesmo quarto; entrada por horas sem pagamento total; recepcionista alterar preços, anular pagamentos ou fechar com dívida.
-- Dashboard bate certo com as estadias e pagamentos do ensaio (ocupação, recebido, em falta).
-- Cada entrada, pagamento, anulação e saída aparece no histórico com autor e hora.
-- Isolamento entre dois estabelecimentos revalidado com os módulos novos.
-- Funciona bem em telemóvel com rede fraca (páginas leves, sem imagens pesadas).
-- Sem erros de compilação; dados de teste removidos; todas as alterações no GitHub.
+PASS/FAIL dos 13 pontos com evidência (valores lidos da base de dados e texto do ecrã), limitações reais (por exemplo, as 22:14 e a expiração são simuladas deslocando horas; "outro dispositivo" são duas sessões de browser), IDs de teste e o commit SHA.
 
 ## Notas técnicas
 
-- Novas tabelas em `public` com `establishment_id`, GRANTs, RLS via `current_establishment_id()` / `is_manager()`.
-- Índice único parcial em `stays(room_id) where status='em_curso'`.
-- Entrada + pagamento (modo horas) e saída numa função SQL transacional (`security definer` com verificação de papel), chamada por server function com `requireSupabaseAuth`; estado do quarto atualizado só por essas funções/gatilhos.
-- "A sair/Atrasado" calculado na leitura a partir de `expected_checkout_at`.
-- `checkout_time` novo em `establishments` (default 12:00).
-- Novas permissões em `src/lib/roles.ts` (ex.: `quartos.gerir`, `preco.alterar`, `pagamento.anular`, `saida.com_divida`).
-- Rotas: `/hospedagem` (grelha), `/hospedagem/quartos`, `/hospedagem/estadias/$id`.
+- Scripts temporários de teste em bun (clientes com sessão de cada papel, chamadas `rpc('op_*')`, `Promise.all` para concorrência, canal de tempo real em `rooms/stays/payments`) e Playwright em `/tmp/browser/ensaio`.
+- Leitura da auditoria por consulta direta a `audit_logs` (`entity_id` = estadia).
+- Deslocação de horas só na estadia de teste, com a chave de serviço; nenhuma migração prevista.
+- Typecheck com `tsgo`, build com `bun run build`.
