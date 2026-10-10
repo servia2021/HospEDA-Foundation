@@ -22,3 +22,4 @@
 ## Controlo Operacional Remoto (concluído e validado)
 - [x] Cronómetro persistido, extensão, expiração, saída por horas liberta o quarto, auditoria, tempo real
 - [ ] Dashboard vivo, ensaio completo
+- [x] Dashboard com dados reais da Hospedagem (correção mínima)
