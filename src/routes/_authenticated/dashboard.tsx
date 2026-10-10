@@ -144,7 +144,7 @@ function LiveDashboard({ name, role, currency }: { name: string; role: ReturnTyp
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <MetricCard
             label="Ocupação"
-            value={formatPercent(total ? occupied / total : 0)}
+            value={formatPercent(total ? (occupied / total) * 100 : 0)}
             hint={noRooms ?? `${occupied} de ${total} quartos`}
             icon={BedDouble}
           />
