@@ -1,32 +1,39 @@
-# Diagnóstico: Dashboard vs Hospedagem (Emas)
+# Dashboard “Premium Corporate” — plano mínimo
 
-## Causa (confirmada)
-O Dashboard não lê nenhum dado. Em `src/routes/_authenticated/dashboard.tsx` todos os indicadores são valores fixos da Fase 1:
-- Ocupação `formatPercent(0)`, Disponíveis `"0"`, Check-ins/Check-outs `"0"`, com o texto "Sem quartos registados".
-- Receita, Recebido e Pendente `formatMoney(0, ...)`.
-- Alertas e "Próximos passos (Fase 1 concluída…)" são texto fixo.
-- A página só usa `useAccess()` (nome do estabelecimento e papel). Não chama o backend nem lê quartos, estadias ou pagamentos.
+## Estado observado
+- O Dashboard já usa a mesma consulta operacional da Hospedagem, atualiza periodicamente e preserva os estados de carregamento, erro, estabelecimento ausente e alertas.
+- A apresentação atual é funcional, mas quase todos os indicadores têm o mesmo peso visual: grelhas uniformes, títulos de secção discretos e espaçamento constante.
+- O sistema visual existente já oferece os tokens necessários: superfícies claras, verde-petróleo institucional, cobre para dinheiro, tipografia `Plus Jakarta Sans`/`Manrope`, sombras e estados sem conteúdo reutilizáveis.
 
-A Hospedagem usa `getOperationsBoard` (`src/lib/operations.functions.ts`), que lê `rooms`, `stays`, `payments`, `guests` com RLS e `op_current_day_start`.
+## Alteração proposta
+1. Alterar somente `src/routes/_authenticated/dashboard.tsx`.
+2. Reorganizar visualmente, sem mudar ordem semântica nem conteúdo:
+   - cabeçalho com mais separação do corpo;
+   - títulos de secção com hierarquia e divisores discretos;
+   - bloco de ocupação com maior destaque para o indicador principal e grelha responsiva mais editorial;
+   - bloco financeiro com leitura prioritária de “Recebido”, mantendo exatamente os três indicadores e valores;
+   - alertas mais compactos e escaneáveis, sem mudar textos, condições ou ações;
+   - botão “Abrir Hospedagem” integrado ao fecho da página, preservando o mesmo link.
+3. Usar apenas classes e tokens semânticos já existentes. Não alterar componentes partilhados, tokens globais, cores, lógica, consultas, permissões ou dados.
+4. Manter todos os textos funcionais atuais, incluindo mensagens de erro, estados vazios, rótulos, dicas e nome/papel do estabelecimento.
 
-## Os dados estão certos (consulta direta, só leitura)
-- Emas (`97382462-…`) tem 1 quarto: "01", estado `ocupado`.
-- Estadia `34366efd-…` de Sergio Augusto: por horas, em curso, entrada 08:16 UTC (09:16 Luanda), fim previsto 12:16 UTC (13:16).
-- Pagamentos ativos: 14.000 Kz.
-- Tudo pertence ao Emas. Não há problema de filtros, estabelecimento, permissões, fuso ou dados de demonstração. A divergência vem só do Dashboard provisório.
+## Ficheiros
+- **A alterar numa futura execução:** `src/routes/_authenticated/dashboard.tsx`.
+- **A reutilizar sem alteração:** `src/components/metric-card.tsx`, `src/components/page-header.tsx`, `src/components/empty-state.tsx`, componentes de botão/badge e `src/styles.css`.
 
-## Correção mínima recomendada (precisa de autorização)
-Usar no Dashboard a mesma fonte da Hospedagem, sem redesenho nem nova consulta ao backend:
-- Ler `getOperationsBoard` (mesma chave de cache da Hospedagem).
-- Ocupação = ocupados / quartos ativos; Disponíveis = quartos `livre`; mostrar o número real de quartos.
-- Recebido = `receivedTodayKz`; Pendente = soma de (valor previsto − pago) das estadias em curso; Receita = Recebido, até existir Caixa.
-- Check-ins hoje = estadias com início desde o início do dia; Check-outs = estadias por sair ou expiradas (o resultado do board não inclui saídas já concluídas hoje, por isso fica assinalado como limitação ou exige um pequeno campo extra).
-- Alertas: listar as estadias expiradas ou com valor em falta; senão, manter o estado vazio.
-- Retirar o bloco "Fase 1 concluída".
-- Só altera `dashboard.tsx`. Base de dados, permissões e outras páginas ficam iguais.
+## Riscos e contenção
+- **Destaque excessivo em ecrãs pequenos:** limitar mudanças a grelhas responsivas e verificar 375 px, tablet e desktop.
+- **Quebra de alinhamento com valores longos em Kz:** manter dimensões estáveis e testar números extensos.
+- **Regressão funcional acidental:** não tocar no bloco de cálculo/consulta; restringir a edição à estrutura JSX e classes visuais.
+- **Impacto noutras páginas:** evitado ao não alterar componentes nem estilos partilhados.
+- **Reversibilidade:** uma única alteração num único ficheiro, sem migrações nem efeitos em dados.
 
-## Validação após a correção
-1. Typecheck/build sem erros.
-2. Entrar com sessão Emas só de leitura e abrir `/dashboard`: deve mostrar 1 quarto, 100% de ocupação, 0 disponíveis, 14.000 Kz recebidos, 0 Kz pendentes. Os valores devem coincidir com `/hospedagem`.
-3. Conta demo: o Dashboard mostra apenas os seus dados (0) e nada do Emas.
-4. Nenhum dado é criado ou alterado durante a validação.
+## Validação prevista
+1. Comparação visual do Dashboard em 375×812, 768×1024 e 1280×900, nos estados com dados, sem quartos, erro e carregamento.
+2. Confirmar ausência de sobreposição, corte de valores, deslocamentos inesperados e perda de contraste.
+3. Confirmar que todos os indicadores, alertas, badge de papel e link continuam presentes e com o mesmo conteúdo.
+4. Confirmar que a consulta, atualização de 30 segundos e atualização ao focar a janela permanecem inalteradas.
+5. Executar a verificação de tipos e observar o build automático e a consola do browser.
+
+## Créditos
+Não é possível garantir o custo exato antecipadamente. O âmbito de um único ficheiro torna a execução pequena e plausível, mas **0,90 créditos deixa pouca margem para inspeção visual, correções e repetição dos testes**. A opção mais segura é esperar por mais créditos. Se for necessário avançar com esse saldo, deve ser feita uma única passagem conservadora, sem imagens, novos componentes ou alterações globais, aceitando que uma segunda ronda pode ficar pendente.
