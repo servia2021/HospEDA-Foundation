@@ -126,8 +126,9 @@ function LiveDashboard({ name, role, currency }: { name: string; role: ReturnTyp
   const noRooms = total === 0 ? "Sem quartos registados" : undefined;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 sm:space-y-10">
       <PageHeader
+        className="border-b border-border pb-6 [&_h1]:whitespace-normal [&_h1]:break-words [&_h1]:text-2xl [&_h1]:sm:text-3xl"
         title={name}
         description="Estado atual da hospedaria, com os mesmos dados da Hospedagem."
         badge={role ? <Badge variant="secondary">{ROLE_LABELS[role]}</Badge> : null}
@@ -137,12 +138,13 @@ function LiveDashboard({ name, role, currency }: { name: string; role: ReturnTyp
         <p className="text-sm text-destructive">Não foi possível carregar os dados. Tente novamente.</p>
       ) : null}
 
-      <section aria-labelledby="ocupacao-titulo" className="space-y-3">
-        <h2 id="ocupacao-titulo" className="text-sm font-bold text-foreground">
+      <section aria-labelledby="ocupacao-titulo" className="space-y-4">
+        <h2 id="ocupacao-titulo" className="text-base font-bold text-foreground">
           Hospedagem hoje
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.35fr_1fr_1fr_1fr] [&_article]:min-w-0 [&_article]:rounded-lg [&_article>p]:break-words">
           <MetricCard
+            className="border-primary/25 bg-primary-soft/40 shadow-none [&>p:first-of-type]:text-3xl"
             label="Ocupação"
             value={formatPercent(total ? (occupied / total) * 100 : 0)}
             hint={noRooms ?? `${occupied} de ${total} quartos`}
@@ -154,13 +156,13 @@ function LiveDashboard({ name, role, currency }: { name: string; role: ReturnTyp
         </div>
       </section>
 
-      <section aria-labelledby="dinheiro-titulo" className="space-y-3">
-        <h2 id="dinheiro-titulo" className="text-sm font-bold text-foreground">
+      <section aria-labelledby="dinheiro-titulo" className="space-y-4 border-t border-border pt-6">
+        <h2 id="dinheiro-titulo" className="text-base font-bold text-foreground">
           Dinheiro do dia
         </h2>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-3 [&_article]:min-w-0 [&_article]:rounded-lg [&_article>p]:break-words">
           <MetricCard label="Receita" value={formatMoney(received, currency)} hint="Pagamentos ativos de hoje" icon={Wallet} tone="money" />
-          <MetricCard label="Recebido" value={formatMoney(received, currency)} hint="Desde o início do dia" icon={BanknoteArrowUp} tone="money" />
+          <MetricCard className="border-accent/30 bg-accent-soft/40 shadow-none" label="Recebido" value={formatMoney(received, currency)} hint="Desde o início do dia" icon={BanknoteArrowUp} tone="money" />
           <MetricCard
             label="Pendente"
             value={formatMoney(pending, currency)}
@@ -171,25 +173,26 @@ function LiveDashboard({ name, role, currency }: { name: string; role: ReturnTyp
         </div>
       </section>
 
-      <section aria-labelledby="alertas-titulo" className="space-y-3">
-        <h2 id="alertas-titulo" className="text-sm font-bold text-foreground">
+      <section aria-labelledby="alertas-titulo" className="space-y-4 border-t border-border pt-6">
+        <h2 id="alertas-titulo" className="text-base font-bold text-foreground">
           Alertas
         </h2>
         {due.length || debts.length ? (
-          <ul className="surface-card divide-y divide-border">
+          <ul className="surface-card divide-y divide-border rounded-lg shadow-none">
             {due.map((s) => (
-              <li key={`d-${s.id}`} className="p-4 text-sm text-foreground">
+              <li key={`d-${s.id}`} className="break-words px-4 py-3 text-sm leading-relaxed text-foreground sm:px-5">
                 Quarto {s.room} — {s.guestName}: tempo terminado, falta registar saída
               </li>
             ))}
             {debts.map((s) => (
-              <li key={`p-${s.id}`} className="p-4 text-sm text-foreground">
+              <li key={`p-${s.id}`} className="break-words px-4 py-3 text-sm leading-relaxed text-foreground sm:px-5">
                 Quarto {s.room} — {s.guestName}: faltam {formatMoney(s.expectedAmount - s.paidKz, currency)}
               </li>
             ))}
           </ul>
         ) : (
           <EmptyState
+            className="rounded-lg border-dashed bg-transparent py-6 shadow-none sm:py-8"
             icon={TriangleAlert}
             title="Sem alertas"
             description="Estadias com tempo terminado ou valores em falta aparecem aqui primeiro."
@@ -197,7 +200,7 @@ function LiveDashboard({ name, role, currency }: { name: string; role: ReturnTyp
         )}
       </section>
 
-      <Button asChild variant="outline" className="w-full sm:w-auto">
+      <Button asChild variant="outline" className="h-11 w-full sm:w-auto">
         <Link to="/hospedagem">Abrir Hospedagem</Link>
       </Button>
     </div>
